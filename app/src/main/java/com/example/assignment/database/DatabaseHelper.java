@@ -3,18 +3,23 @@ package com.example.assignment.database;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import com.example.assignment.logic.IngredientNormalizer;
 import com.example.assignment.model.PantryItem;
+import com.example.assignment.model.Recipe;
+import com.example.assignment.model.RecipeIngredient;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Creates the SQLite database and provides CRUD methods for pantry items.
- *
+ * Creates the SQLite database, provides CRUD methods for pantry items
+ * and reads the recipes back out with their ingredients.
  * A single shared instance is used (getInstance) so the whole app works with
  * one database connection instead of opening a new one on every screen.
  */
@@ -170,13 +175,77 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
+    //  RECIPE QUERIES:
+
+    /**
+     * READ: returns every recipe with its ingredients, sorted alphabetically.
+     * Uses two queries (all recipes, then all ingredients) instead of one query
+     * per recipe, which would get slower as more recipes are added.
+     */
+    public List<Recipe> getAllRecipesWithIngredients() {
+        SQLiteDatabase db = getReadableDatabase();
+        // LinkedHashMap keeps the recipes in the A-Z order they were read in
+        Map<Long, Recipe> recipesById = new LinkedHashMap<>();
+
+        // Query 1: all recipes
+        try (Cursor cursor = db.query(TABLE_RECIPES, null, null, null, null, null,
+                COL_NAME + " COLLATE NOCASE ASC")) {
+            while (cursor.moveToNext()) {
+                Recipe recipe = cursorToRecipe(cursor);
+                recipesById.put(recipe.getId(), recipe);
+            }
+        }
+
+        // Query 2: all ingredients, each one added to its recipe using recipe_id
+        try (Cursor cursor = db.query(TABLE_RECIPE_INGREDIENTS, null, null, null, null, null,
+                COL_ID + " ASC")) {
+            while (cursor.moveToNext()) {
+                RecipeIngredient ingredient = cursorToRecipeIngredient(cursor);
+                Recipe owner = recipesById.get(ingredient.getRecipeId());
+                if (owner != null) {
+                    owner.addIngredient(ingredient);
+                }
+            }
+        }
+        return new ArrayList<>(recipesById.values());
+    }
+
+    // READ: returns one recipe with its ingredients, or null if it doesn't exist.
+    public Recipe getRecipeById(long id) {
+        SQLiteDatabase db = getReadableDatabase();
+        String[] args = {String.valueOf(id)};
+        Recipe recipe = null;
+
+        try (Cursor cursor = db.query(TABLE_RECIPES, null,
+                COL_ID + " = ?", args, null, null, null)) {
+            if (cursor.moveToFirst()) {
+                recipe = cursorToRecipe(cursor);
+            }
+        }
+        if (recipe == null) {
+            return null;
+        }
+
+        try (Cursor cursor = db.query(TABLE_RECIPE_INGREDIENTS, null,
+                COL_RECIPE_ID + " = ?", args, null, null, COL_ID + " ASC")) {
+            while (cursor.moveToNext()) {
+                recipe.addIngredient(cursorToRecipeIngredient(cursor));
+            }
+        }
+        return recipe;
+    }
+
+    // Returns how many recipes are stored (useful to check the seeding worked).
+    public long getRecipeCount() {
+        return DatabaseUtils.queryNumEntries(getReadableDatabase(), TABLE_RECIPES);
+    }
+
+
     //HELPERS:
 
 
-    /**
-     * Converts a PantryItem into column/value pairs. The normalized name is
-     * calculated here so it can never be forgotten by the screens that save items.
-     */
+
+     //Converts a PantryItem into column/value pairs.
     private ContentValues toContentValues(PantryItem item) {
         String cleanName = item.getName().trim();
         item.setNormalizedName(IngredientNormalizer.normalize(cleanName));
@@ -204,5 +273,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cursor.getDouble(cursor.getColumnIndexOrThrow(COL_QUANTITY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COL_UNIT)),
                 cursor.isNull(expiryIndex) ? null : cursor.getString(expiryIndex));
+    }
+
+    // Builds a Recipe (without its ingredients) from the row the cursor is currently on.
+    private Recipe cursorToRecipe(Cursor cursor) {
+        return new Recipe(
+                cursor.getLong(cursor.getColumnIndexOrThrow(COL_ID)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COL_NAME)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COL_STEPS)));
+    }
+
+    // Builds a RecipeIngredient from the row the cursor is currently on.
+    private RecipeIngredient cursorToRecipeIngredient(Cursor cursor) {
+        return new RecipeIngredient(
+                cursor.getLong(cursor.getColumnIndexOrThrow(COL_ID)),
+                cursor.getLong(cursor.getColumnIndexOrThrow(COL_RECIPE_ID)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COL_NAME)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COL_NORMALIZED_NAME)),
+                cursor.getDouble(cursor.getColumnIndexOrThrow(COL_QUANTITY)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COL_UNIT)));
     }
 }
