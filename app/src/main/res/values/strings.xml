@@ -40,4 +40,35 @@
     <string name="error_quantity_invalid">Please enter a valid number</string>
     <string name="error_quantity_positive">Quantity must be greater than 0</string>
     <string name="error_quantity_too_large">Quantity is too large</string>
+
+    <!-- Navigation -->
+    <string name="nav_pantry">Pantry</string>
+    <string name="nav_suggestions">Suggestions</string>
+
+    <!-- Suggested recipes screen -->
+    <string name="title_suggestions">Suggested Recipes</string>
+    <string name="empty_suggestions">No recipes match your pantry yet.\nAdd more ingredients to see suggestions.</string>
+    <string name="empty_suggestions_no_pantry">Your pantry is empty.\nAdd some ingredients to see what you can cook.</string>
+    <plurals name="recipes_you_can_make">
+        <item quantity="one">You can make %d recipe with what you have</item>
+        <item quantity="other">You can make %d recipes with what you have</item>
+    </plurals>
+    <plurals name="ingredient_count">
+        <item quantity="one">%d ingredient</item>
+        <item quantity="other">%d ingredients</item>
+    </plurals>
+
+    <!-- Recipe detail screen -->
+    <string name="title_recipe_detail">Recipe</string>
+    <string name="label_ingredients">Ingredients</string>
+    <string name="label_method">Method</string>
+    <string name="status_can_make">You have everything you need for this recipe</string>
+    <string name="status_missing">Missing: %1$s</string>
+    <string name="ingredient_line">%1$s %2$s %3$s</string>
+    <string name="symbol_have">✓</string>
+    <string name="symbol_missing">✗</string>
+    <string name="cd_have">In your pantry</string>
+    <string name="cd_missing">Not in your pantry</string>
+    <string name="recipe_not_found">Recipe not found</string>
+
 </resources>
