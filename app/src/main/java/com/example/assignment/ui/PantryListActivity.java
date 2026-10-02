@@ -53,6 +53,8 @@ public class PantryListActivity extends AppCompatActivity
         FloatingActionButton addButton = findViewById(R.id.fab_add);
         addButton.setOnClickListener(v ->
                 startActivity(new Intent(this, AddEditIngredientActivity.class)));
+
+        BottomNavHelper.setup(this, findViewById(R.id.bottom_nav), R.id.nav_pantry);
     }
 
     /**
@@ -75,7 +77,7 @@ public class PantryListActivity extends AppCompatActivity
         recyclerView.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
     }
 
-    /** Opens the edit screen, passing the item's id through the Intent. */
+    //Opens the edit screen, passing the item's id through the Intent.
     @Override
     public void onItemClick(PantryItem item) {
         Intent intent = new Intent(this, AddEditIngredientActivity.class);
