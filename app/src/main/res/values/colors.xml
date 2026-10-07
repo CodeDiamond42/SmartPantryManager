@@ -4,4 +4,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="status_have">#2E7D32</color>
     <color name="status_missing">#C62828</color>
+    <color name="status_warning">#E65100</color>
 </resources>
