@@ -2,16 +2,21 @@ package com.example.assignment.ui;
 
 import android.app.DatePickerDialog;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.assignment.R;
 import com.example.assignment.adapter.PantryAdapter;
 import com.example.assignment.database.DatabaseHelper;
+import com.example.assignment.logic.IngredientNormalizer;
+import com.example.assignment.logic.UnitConverter;
 import com.example.assignment.model.PantryItem;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.textfield.TextInputEditText;
@@ -26,13 +31,16 @@ import java.util.Locale;
  */
 public class AddEditIngredientActivity extends AppCompatActivity {
 
-    // Key for the item id passed from PantryListActivity.
+    // key for the item id passed from PantryListActivity
     public static final String EXTRA_ITEM_ID = "com.example.assignment.EXTRA_ITEM_ID";
+
+    // key for keeping the chosen expiry date when the screen is rotated
+    private static final String STATE_EXPIRY_DATE = "state_expiry_date";
 
     private static final long NO_ID = -1L;
     private static final int MAX_NAME_LENGTH = 50;
     private static final double MAX_QUANTITY = 100000;
-    // Letters (any language), spaces, hyphens and apostrophes; must start with a letter
+    // letters, spaces, hyphens and apostrophes, must start with a letter
     private static final String NAME_PATTERN = "\\p{L}[\\p{L} '\\-]*";
 
     private DatabaseHelper dbHelper;
@@ -45,6 +53,7 @@ public class AddEditIngredientActivity extends AppCompatActivity {
 
     private long itemId = NO_ID;
     private String selectedExpiryDate;   // "yyyy-MM-dd" or null
+    private String lastSuggestedUnit;    //only change the unit when the suggestion changes
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +75,7 @@ public class AddEditIngredientActivity extends AppCompatActivity {
         unitSpinner = findViewById(R.id.spinner_unit);
         expiryText = findViewById(R.id.text_expiry_value);
 
-        // Fill the unit dropdown from res/values/arrays.xml
+        // fill the unit dropdown from res/values/arrays.xml
         ArrayAdapter<CharSequence> unitAdapter = ArrayAdapter.createFromResource(
                 this, R.array.units, android.R.layout.simple_spinner_item);
         unitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -78,7 +87,7 @@ public class AddEditIngredientActivity extends AppCompatActivity {
 
         setExpiryDate(null);
 
-        // Decide between add mode and edit mode
+        // decide between add mode and edit mode
         itemId = getIntent().getLongExtra(EXTRA_ITEM_ID, NO_ID);
         if (itemId != NO_ID) {
             setTitle(R.string.title_edit_ingredient);
@@ -86,6 +95,37 @@ public class AddEditIngredientActivity extends AppCompatActivity {
         } else {
             setTitle(R.string.title_add_ingredient);
         }
+
+        // After a rotation, put back the date the user picked. The name, quantity and
+        // unit restore themselves, but the date only lives in a variable, so it would be lost.
+        if (savedInstanceState != null && savedInstanceState.containsKey(STATE_EXPIRY_DATE)) {
+            setExpiryDate(savedInstanceState.getString(STATE_EXPIRY_DATE));
+        }
+
+        // suggest the right unit as the user types the name
+        nameInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // only pick the unit for the user when adding, never when editing
+                updateUnitSuggestion(itemId == NO_ID);
+            }
+        });
+        updateUnitSuggestion(false);   // show the hint for an existing item without changing its unit
+    }
+
+    // saves the chosen expiry date before the screen is destroyed (e.g. on rotation)
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_EXPIRY_DATE, selectedExpiryDate);
     }
 
     // Edit mode: fills the form with the item's current values.
@@ -98,18 +138,57 @@ public class AddEditIngredientActivity extends AppCompatActivity {
         }
         nameInput.setText(item.getName());
         quantityInput.setText(PantryAdapter.formatQuantity(item.getQuantity()));
-
-        String[] units = getResources().getStringArray(R.array.units);
-        for (int i = 0; i < units.length; i++) {
-            if (units[i].equals(item.getUnit())) {
-                unitSpinner.setSelection(i);
-                break;
-            }
-        }
+        selectUnit(item.getUnit());
         setExpiryDate(item.getExpiryDate());
     }
 
-    // Opens a calendar, starting on the current expiry date if one is set.
+    /**
+     * Looks up which unit the recipes use for this ingredient and shows it under the name,
+     * e.g. "Recipes measure honey in tbsp...". This stops people adding honey in grams
+     * when every recipe measures it by volume (which would never match).
+     */
+    private void updateUnitSuggestion(boolean autoSelect) {
+        String name = getText(nameInput);
+        String recipeUnit = name.isEmpty()
+                ? null
+                : dbHelper.getRecipeUnitFor(IngredientNormalizer.normalize(name));
+
+        if (recipeUnit == null) {
+            nameLayout.setHelperText(null);
+            lastSuggestedUnit = null;
+            return;
+        }
+
+        nameLayout.setHelperText(unitHint(name, recipeUnit));
+        if (autoSelect && !recipeUnit.equals(lastSuggestedUnit)) {
+            selectUnit(recipeUnit);
+        }
+        lastSuggestedUnit = recipeUnit;
+    }
+
+    private String unitHint(String name, String unit) {
+        String ingredient = name.toLowerCase(Locale.getDefault());
+        UnitConverter.Category category = UnitConverter.getCategory(unit);
+        if (category == UnitConverter.Category.VOLUME) {
+            return getString(R.string.unit_hint_volume, ingredient, unit);
+        } else if (category == UnitConverter.Category.MASS) {
+            return getString(R.string.unit_hint_mass, ingredient, unit);
+        }
+        return getString(R.string.unit_hint_count, ingredient);
+    }
+
+    // selects a unit in the dropdown by its text, e.g. "ml"
+    private void selectUnit(String unit) {
+        String[] units = getResources().getStringArray(R.array.units);
+        for (int i = 0; i < units.length; i++) {
+            if (units[i].equals(unit)) {
+                unitSpinner.setSelection(i);
+                return;
+            }
+        }
+    }
+
+    // opens a calendar, starting on the current expiry date if one is set
     private void showDatePicker() {
         Calendar calendar = Calendar.getInstance();
         if (selectedExpiryDate != null) {
@@ -132,17 +211,17 @@ public class AddEditIngredientActivity extends AppCompatActivity {
         expiryText.setText(date == null ? getString(R.string.no_expiry_date) : date);
     }
 
-    //Validates the form, then CREATEs or UPDATEs the item.
+    // checks the form, then creates or updates the item
     private void saveItem() {
         nameLayout.setError(null);
         quantityLayout.setError(null);
 
         String name = getText(nameInput);
-        // Some keyboards use a comma as the decimal separator
+        // some keyboards use a comma as the decimal separator
         String quantityText = getText(quantityInput).replace(',', '.');
         boolean isValid = true;
 
-        //Name validation
+        // name checks
         if (name.isEmpty()) {
             nameLayout.setError(getString(R.string.error_name_required));
             isValid = false;
@@ -154,7 +233,7 @@ public class AddEditIngredientActivity extends AppCompatActivity {
             isValid = false;
         }
 
-        // Quantity validation
+        // quantity checks
         double quantity = 0;
         if (quantityText.isEmpty()) {
             quantityLayout.setError(getString(R.string.error_quantity_required));
@@ -182,7 +261,6 @@ public class AddEditIngredientActivity extends AppCompatActivity {
         String unit = unitSpinner.getSelectedItem().toString();
 
         if (itemId == NO_ID) {
-            // CREATE
             PantryItem newItem = new PantryItem(name, quantity, unit, selectedExpiryDate);
             if (dbHelper.insertPantryItem(newItem) == -1) {
                 Toast.makeText(this, R.string.error_save_failed, Toast.LENGTH_SHORT).show();
@@ -190,7 +268,6 @@ public class AddEditIngredientActivity extends AppCompatActivity {
             }
             Toast.makeText(this, R.string.item_added, Toast.LENGTH_SHORT).show();
         } else {
-            // UPDATE
             PantryItem updatedItem = new PantryItem(itemId, name, null, quantity, unit, selectedExpiryDate);
             if (!dbHelper.updatePantryItem(updatedItem)) {
                 Toast.makeText(this, R.string.error_save_failed, Toast.LENGTH_SHORT).show();
@@ -198,15 +275,15 @@ public class AddEditIngredientActivity extends AppCompatActivity {
             }
             Toast.makeText(this, R.string.item_updated, Toast.LENGTH_SHORT).show();
         }
-        finish();   // return to the pantry list, whose onResume() reloads the data
+        finish();   // back to the pantry list, whose onResume() reloads the data
     }
 
-    // Safely reads trimmed text from an input field.
+    // reads trimmed text from an input field without risking a null
     private String getText(TextInputEditText input) {
         return input.getText() == null ? "" : input.getText().toString().trim();
     }
 
-    // Toolbar back arrow closes this screen.
+    // toolbar back arrow closes this screen
     @Override
     public boolean onSupportNavigateUp() {
         finish();
