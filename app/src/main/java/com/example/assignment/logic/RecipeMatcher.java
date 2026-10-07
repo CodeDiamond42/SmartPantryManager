@@ -11,9 +11,12 @@ import java.util.Map;
 
 /**
  * Works out which recipes can be made with what's in the pantry.
+ *
  * The rule is strict: every ingredient has to be there, in at least the amount
  * the recipe needs. If even one is missing or there isn't enough of it,
  * the recipe doesn't get suggested.
+ *
+ * There's no Android code in here on purpose, so it can be unit tested.
  */
 public final class RecipeMatcher {
 
@@ -35,6 +38,22 @@ public final class RecipeMatcher {
             }
         }
         return makeable;
+    }
+
+    // Recipes that are missing exactly ONE ingredient (or have one that's short).
+    // This is the optional "Almost there" list. It's kept completely separate from
+    // findMakeableRecipes(), so these never count as suggestions.
+    public static List<Recipe> findAlmostThereRecipes(List<Recipe> recipes, List<PantryItem> pantry) {
+        Map<String, Double> pantryTotals = buildPantryTotals(pantry);
+
+        List<Recipe> almostThere = new ArrayList<>();
+        for (Recipe recipe : recipes) {
+            // a one-ingredient recipe missing its only ingredient isn't really "almost there"
+            if (recipe.getIngredients().size() > 1 && countMissing(recipe, pantryTotals, 2) == 1) {
+                almostThere.add(recipe);
+            }
+        }
+        return almostThere;
     }
 
     // Returns the ingredients we don't have (or don't have enough of) for a recipe.
@@ -59,6 +78,21 @@ public final class RecipeMatcher {
             }
         }
         return true;
+    }
+
+    // Counts missing ingredients, but stops once it reaches 'limit'
+    // (for "almost there" we only care whether it's exactly 1).
+    private static int countMissing(Recipe recipe, Map<String, Double> pantryTotals, int limit) {
+        int missing = 0;
+        for (RecipeIngredient ingredient : recipe.getIngredients()) {
+            if (!hasEnough(ingredient, pantryTotals)) {
+                missing++;
+                if (missing >= limit) {
+                    break;
+                }
+            }
+        }
+        return missing;
     }
 
     private static boolean hasEnough(RecipeIngredient ingredient, Map<String, Double> pantryTotals) {
@@ -96,7 +130,7 @@ public final class RecipeMatcher {
     }
 
     // Items loaded from the database already have a normalized name.
-    // Items created in the tests do not have normalized names, it gets worked out in this function.
+    // Items created in the tests don't, so we work it out here.
     private static String nameFor(String normalizedName, String rawName) {
         return normalizedName != null ? normalizedName : IngredientNormalizer.normalize(rawName);
     }

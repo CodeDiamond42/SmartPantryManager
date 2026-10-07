@@ -3,10 +3,9 @@ package com.example.assignment.logic;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.example.assignment.logic.RecipeMatcher;
 import com.example.assignment.model.PantryItem;
 import com.example.assignment.model.Recipe;
-import com.example.assignment.model.RecipeIngredient;import com.google.firebase.firestore.util.Assert;
+import com.example.assignment.model.RecipeIngredient;
 
 import org.junit.Test;
 
@@ -154,5 +153,45 @@ public class RecipeMatcherTest {
 
         assertEquals(1, missing.size());
         assertEquals("Cheese", missing.get(0).getName());
+    }
+
+    // --- the optional "almost there" list ---
+
+    @Test
+    public void almostThere_includesRecipeMissingExactlyOneIngredient() {
+        Recipe porridge = recipe("Porridge",
+                need("Oats", 50, "g"), need("Milk", 250, "ml"), need("Honey", 1, "tbsp"));
+        List<Recipe> result = RecipeMatcher.findAlmostThereRecipes(
+                Collections.singletonList(porridge),
+                Arrays.asList(have("Oats", 500, "g"), have("Milk", 1, "L")));   // no honey
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    public void almostThere_excludesRecipeMissingTwoIngredients() {
+        Recipe porridge = recipe("Porridge",
+                need("Oats", 50, "g"), need("Milk", 250, "ml"), need("Honey", 1, "tbsp"));
+        List<Recipe> result = RecipeMatcher.findAlmostThereRecipes(
+                Collections.singletonList(porridge),
+                Collections.singletonList(have("Oats", 500, "g")));
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void almostThere_neverIncludesRecipesThatCanAlreadyBeMade() {
+        Recipe toast = recipe("Toast", need("Bread slices", 2, "pcs"), need("Butter", 10, "g"));
+        List<Recipe> result = RecipeMatcher.findAlmostThereRecipes(
+                Collections.singletonList(toast),
+                Arrays.asList(have("Bread slices", 2, "pcs"), have("Butter", 10, "g")));
+        assertTrue(result.isEmpty());   // it's a full suggestion, so it isn't "almost there"
+    }
+
+    @Test
+    public void almostThere_countsNotEnoughAsMissing() {
+        Recipe omelette = recipe("Omelette", need("Eggs", 3, "pcs"), need("Milk", 30, "ml"));
+        List<Recipe> result = RecipeMatcher.findAlmostThereRecipes(
+                Collections.singletonList(omelette),
+                Arrays.asList(have("Eggs", 2, "pcs"), have("Milk", 1, "L")));   // one egg short
+        assertEquals(1, result.size());
     }
 }
