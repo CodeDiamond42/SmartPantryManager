@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Shows one recipe: its name, whether the pantry covers it, the full
+ * Shows one recipe: its name, prep time, whether the pantry covers it, the full
  * ingredient list (ticked or crossed) and the method.
  */
 public class RecipeDetailActivity extends AppCompatActivity {
@@ -60,11 +60,13 @@ public class RecipeDetailActivity extends AppCompatActivity {
         }
 
         TextView nameText = findViewById(R.id.text_recipe_name);
+        TextView prepTimeText = findViewById(R.id.text_prep_time);
         TextView statusText = findViewById(R.id.text_status);
         TextView stepsText = findViewById(R.id.text_steps);
         RecyclerView ingredientList = findViewById(R.id.recycler_ingredients);
 
         nameText.setText(recipe.getName());
+        prepTimeText.setText(getString(R.string.prep_time, recipe.getPrepMinutes()));
         stepsText.setText(recipe.getSteps());
         showStatus(statusText, missing);
 

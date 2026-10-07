@@ -15,22 +15,28 @@ import com.example.assignment.database.DatabaseHelper;
 import com.example.assignment.logic.RecipeMatcher;
 import com.example.assignment.model.PantryItem;
 import com.example.assignment.model.Recipe;
+import com.example.assignment.settings.PreferencesManager;
 import com.google.android.material.appbar.MaterialToolbar;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Shows only the recipes the user can make right now, using the strict
- * matching rule in RecipeMatcher. Tapping a recipe opens its details.
+ * Shows the recipes the user can make right now (strict matching), and below that,
+ * in a clearly separate section, recipes that are only missing one ingredient.
  */
 public class SuggestedRecipesActivity extends AppCompatActivity
         implements RecipeAdapter.OnRecipeClickListener {
 
     private DatabaseHelper dbHelper;
-    private RecipeAdapter adapter;
-    private RecyclerView recyclerView;
+    private PreferencesManager prefs;
+    private RecipeAdapter suggestedAdapter;
+    private RecipeAdapter almostThereAdapter;
+    private RecyclerView suggestedList;
     private TextView emptyText;
     private TextView summaryText;
+    private View almostThereSection;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,20 +48,27 @@ public class SuggestedRecipesActivity extends AppCompatActivity
         setTitle(R.string.title_suggestions);
 
         dbHelper = DatabaseHelper.getInstance(this);
+        prefs = new PreferencesManager(this);
 
-        recyclerView = findViewById(R.id.recycler_recipes);
+        suggestedList = findViewById(R.id.recycler_recipes);
         emptyText = findViewById(R.id.text_empty);
         summaryText = findViewById(R.id.text_summary);
+        almostThereSection = findViewById(R.id.section_almost_there);
+        RecyclerView almostThereList = findViewById(R.id.recycler_almost_there);
 
-        adapter = new RecipeAdapter(this);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(adapter);
+        suggestedAdapter = new RecipeAdapter(this);
+        suggestedList.setLayoutManager(new LinearLayoutManager(this));
+        suggestedList.setAdapter(suggestedAdapter);
+
+        almostThereAdapter = new RecipeAdapter(this);
+        almostThereList.setLayoutManager(new LinearLayoutManager(this));
+        almostThereList.setAdapter(almostThereAdapter);
 
         BottomNavHelper.setup(this, findViewById(R.id.bottom_nav), R.id.nav_suggestions);
     }
 
     // re-run the matching every time the screen is shown,
-    // so the list is always based on the current pantry
+    // so both lists are always based on the current pantry
     @Override
     protected void onResume() {
         super.onResume();
@@ -65,9 +78,15 @@ public class SuggestedRecipesActivity extends AppCompatActivity
     private void loadSuggestions() {
         List<PantryItem> pantry = dbHelper.getAllPantryItems();
         List<Recipe> allRecipes = dbHelper.getAllRecipesWithIngredients();
-        List<Recipe> makeable = RecipeMatcher.findMakeableRecipes(allRecipes, pantry);
 
-        adapter.setRecipes(makeable);
+        showSuggestions(pantry, allRecipes);
+        showAlmostThere(pantry, allRecipes);
+    }
+
+    // the main list: strict matches only
+    private void showSuggestions(List<PantryItem> pantry, List<Recipe> allRecipes) {
+        List<Recipe> makeable = RecipeMatcher.findMakeableRecipes(allRecipes, pantry);
+        suggestedAdapter.setRecipes(makeable);
 
         if (makeable.isEmpty()) {
             // different message depending on whether the pantry is empty or just not enough
@@ -75,15 +94,33 @@ public class SuggestedRecipesActivity extends AppCompatActivity
                     ? R.string.empty_suggestions_no_pantry
                     : R.string.empty_suggestions);
             emptyText.setVisibility(View.VISIBLE);
-            recyclerView.setVisibility(View.GONE);
+            suggestedList.setVisibility(View.GONE);
             summaryText.setVisibility(View.GONE);
         } else {
             summaryText.setText(getResources().getQuantityString(
                     R.plurals.recipes_you_can_make, makeable.size(), makeable.size()));
             summaryText.setVisibility(View.VISIBLE);
-            recyclerView.setVisibility(View.VISIBLE);
+            suggestedList.setVisibility(View.VISIBLE);
             emptyText.setVisibility(View.GONE);
         }
+    }
+
+    // the optional second list: recipes missing exactly one ingredient
+    private void showAlmostThere(List<PantryItem> pantry, List<Recipe> allRecipes) {
+        if (!prefs.isShowAlmostThere() || pantry.isEmpty()) {
+            almostThereSection.setVisibility(View.GONE);
+            return;
+        }
+
+        List<Recipe> almostThere = RecipeMatcher.findAlmostThereRecipes(allRecipes, pantry);
+        Map<Long, String> missingNames = new HashMap<>();
+        for (Recipe recipe : almostThere) {
+            String missing = RecipeMatcher.getMissingIngredients(recipe, pantry).get(0).getName();
+            missingNames.put(recipe.getId(), missing);
+        }
+
+        almostThereAdapter.setRecipes(almostThere, missingNames);
+        almostThereSection.setVisibility(almostThere.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     // pass just the recipe id; the detail screen loads the rest from the database

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- one recipe card in the suggestions list -->
+<!-- one recipe card: name, "3 ingredients · 10 min", ingredient preview,
+     and (only in the Almost there list) the missing ingredient -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -20,7 +21,7 @@
             android:textAppearance="?attr/textAppearanceTitleMedium" />
 
         <TextView
-            android:id="@+id/text_ingredient_count"
+            android:id="@+id/text_recipe_meta"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
@@ -34,5 +35,15 @@
             android:ellipsize="end"
             android:maxLines="2"
             android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+        <TextView
+            android:id="@+id/text_missing"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/status_missing"
+            android:textStyle="bold"
+            android:visibility="gone" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

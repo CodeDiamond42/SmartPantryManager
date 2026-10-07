@@ -14,9 +14,16 @@ import com.example.assignment.model.Recipe;
 import com.example.assignment.model.RecipeIngredient;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-// Shows a list of recipes as cards (name, how many ingredients, and a preview of them).
+/**
+ * Shows recipes as cards: name, number of ingredients, prep time and a preview.
+ * The same adapter is used for the "Almost there" list, where each card also
+ * shows the one ingredient that's missing.
+ */
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder> {
 
     // the Activity decides what happens when a recipe is tapped
@@ -25,16 +32,24 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     }
 
     private final List<Recipe> recipes = new ArrayList<>();
+    private final Map<Long, String> missingNames = new HashMap<>();
     private final OnRecipeClickListener listener;
 
     public RecipeAdapter(OnRecipeClickListener listener) {
         this.listener = listener;
     }
 
-    // swaps in a new list, e.g. after the pantry changes
+    // for the normal suggestions list (nothing missing)
     public void setRecipes(List<Recipe> newRecipes) {
+        setRecipes(newRecipes, Collections.emptyMap());
+    }
+
+    // for the "Almost there" list, with the missing ingredient for each recipe
+    public void setRecipes(List<Recipe> newRecipes, Map<Long, String> missing) {
         recipes.clear();
         recipes.addAll(newRecipes);
+        missingNames.clear();
+        missingNames.putAll(missing);
         notifyDataSetChanged();
     }
 
@@ -53,9 +68,21 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         int count = recipe.getIngredients().size();
 
         holder.nameText.setText(recipe.getName());
-        holder.countText.setText(context.getResources()
-                .getQuantityString(R.plurals.ingredient_count, count, count));
+        // e.g. "3 ingredients · 10 min"
+        String ingredientCount = context.getResources()
+                .getQuantityString(R.plurals.ingredient_count, count, count);
+        holder.metaText.setText(context.getString(R.string.recipe_card_meta,
+                ingredientCount, recipe.getPrepMinutes()));
         holder.previewText.setText(ingredientPreview(recipe));
+
+        // only "almost there" cards have a missing ingredient
+        String missing = missingNames.get(recipe.getId());
+        if (missing != null) {
+            holder.missingText.setText(context.getString(R.string.status_missing, missing));
+            holder.missingText.setVisibility(View.VISIBLE);
+        } else {
+            holder.missingText.setVisibility(View.GONE);
+        }
 
         holder.itemView.setOnClickListener(v -> listener.onRecipeClick(recipe));
     }
@@ -79,14 +106,16 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
     static class RecipeViewHolder extends RecyclerView.ViewHolder {
         final TextView nameText;
-        final TextView countText;
+        final TextView metaText;
         final TextView previewText;
+        final TextView missingText;
 
         RecipeViewHolder(@NonNull View itemView) {
             super(itemView);
             nameText = itemView.findViewById(R.id.text_recipe_name);
-            countText = itemView.findViewById(R.id.text_ingredient_count);
+            metaText = itemView.findViewById(R.id.text_recipe_meta);
             previewText = itemView.findViewById(R.id.text_ingredient_preview);
+            missingText = itemView.findViewById(R.id.text_missing);
         }
     }
 }
