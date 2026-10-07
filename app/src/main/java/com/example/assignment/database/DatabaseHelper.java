@@ -27,7 +27,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "smart_pantry_db.db";
     // Increase this number whenever the table structure changes
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     // Table and column names (kept as constants to avoid typos)
     public static final String TABLE_PANTRY = "pantry_items";
@@ -42,6 +42,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COL_EXPIRY_DATE = "expiry_date";
     public static final String COL_STEPS = "steps";
     public static final String COL_RECIPE_ID = "recipe_id";
+    public static final String COL_PREP_MINUTES = "prep_minutes";
 
     //CREATE TABLE statements:
     private static final String SQL_CREATE_PANTRY =
@@ -57,7 +58,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             "CREATE TABLE " + TABLE_RECIPES + " ("
                     + COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                     + COL_NAME + " TEXT NOT NULL UNIQUE, "
-                    + COL_STEPS + " TEXT NOT NULL)";
+                    + COL_STEPS + " TEXT NOT NULL, "
+                    + COL_PREP_MINUTES + " INTEGER NOT NULL CHECK (" + COL_PREP_MINUTES + " > 0))";
 
     private static final String SQL_CREATE_RECIPE_INGREDIENTS =
             "CREATE TABLE " + TABLE_RECIPE_INGREDIENTS + " ("
@@ -132,12 +134,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // READ: returns every pantry item, sorted alphabetically.
     public List<PantryItem> getAllPantryItems() {
+        return getAllPantryItems(false);
+    }
+
+    // READ: returns every pantry item, sorted by name or by expiry date (soonest first).
+    // Items with no expiry date go to the bottom when sorting by expiry.
+    public List<PantryItem> getAllPantryItems(boolean sortByExpiry) {
         List<PantryItem> items = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
 
+        String orderBy = sortByExpiry
+                ? COL_EXPIRY_DATE + " IS NULL, " + COL_EXPIRY_DATE + " ASC, " + COL_NAME + " COLLATE NOCASE ASC"
+                : COL_NAME + " COLLATE NOCASE ASC";
+
         // try-with-resources closes the cursor automatically
-        try (Cursor cursor = db.query(TABLE_PANTRY, null, null, null, null, null,
-                COL_NAME + " COLLATE NOCASE ASC")) {
+        try (Cursor cursor = db.query(TABLE_PANTRY, null, null, null, null, null, orderBy)) {
             while (cursor.moveToNext()) {
                 items.add(cursorToPantryItem(cursor));
             }
@@ -172,6 +183,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int rowsDeleted = db.delete(TABLE_PANTRY,
                 COL_ID + " = ?", new String[]{String.valueOf(id)});
         return rowsDeleted > 0;
+    }
+
+    // DELETE: removes every pantry item (used by "Clear pantry" in Settings).
+    // Returns how many items were deleted. Recipes are not touched.
+    public int deleteAllPantryItems() {
+        return getWritableDatabase().delete(TABLE_PANTRY, null, null);
     }
 
 
@@ -240,12 +257,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return DatabaseUtils.queryNumEntries(getReadableDatabase(), TABLE_RECIPES);
     }
 
+    /**
+     * Returns the unit the recipes most often use for an ingredient (e.g. "tbsp" for honey),
+     * or null if no recipe uses it. The Add screen uses this to suggest the right unit.
+     */
+    public String getRecipeUnitFor(String normalizedName) {
+        String sql = "SELECT " + COL_UNIT + ", COUNT(*) AS uses FROM " + TABLE_RECIPE_INGREDIENTS
+                + " WHERE " + COL_NORMALIZED_NAME + " = ?"
+                + " GROUP BY " + COL_UNIT + " ORDER BY uses DESC LIMIT 1";
+        try (Cursor cursor = getReadableDatabase().rawQuery(sql, new String[]{normalizedName})) {
+            if (cursor.moveToFirst()) {
+                return cursor.getString(0);
+            }
+        }
+        return null;
+    }
+
 
     //HELPERS:
 
 
-
-     //Converts a PantryItem into column/value pairs.
+    /**
+     * Converts a PantryItem into column/value pairs. The normalized name is
+     * calculated here so it can never be forgotten by the screens that save items.
+     */
     private ContentValues toContentValues(PantryItem item) {
         String cleanName = item.getName().trim();
         item.setNormalizedName(IngredientNormalizer.normalize(cleanName));
@@ -280,7 +315,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return new Recipe(
                 cursor.getLong(cursor.getColumnIndexOrThrow(COL_ID)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COL_NAME)),
-                cursor.getString(cursor.getColumnIndexOrThrow(COL_STEPS)));
+                cursor.getString(cursor.getColumnIndexOrThrow(COL_STEPS)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(COL_PREP_MINUTES)));
     }
 
     // Builds a RecipeIngredient from the row the cursor is currently on.
