@@ -36,6 +36,10 @@
             android:exported="false"
             android:parentActivityName=".ui.SuggestedRecipesActivity" />
 
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>
