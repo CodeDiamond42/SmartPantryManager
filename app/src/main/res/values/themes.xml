@@ -1,8 +1,33 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- Base application theme: "Kitchen teal" (light mode).
+         Deep teal for buttons and highlights, warm cream instead of plain white. -->
     <style name="Base.Theme.Assignment" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/teal_primary</item>
+        <item name="colorOnPrimary">@color/teal_on_primary</item>
+        <item name="colorPrimaryContainer">@color/teal_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/teal_on_primary_container</item>
+        <item name="colorSecondary">@color/teal_secondary</item>
+        <item name="colorOnSecondary">@color/teal_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/teal_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/teal_on_secondary_container</item>
+
+        <item name="android:colorBackground">@color/cream_background</item>
+        <item name="colorOnBackground">@color/cream_on_background</item>
+        <item name="colorSurface">@color/cream_background</item>
+        <item name="colorOnSurface">@color/cream_on_background</item>
+        <item name="colorSurfaceVariant">@color/cream_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/cream_on_surface_variant</item>
+        <item name="colorOutline">@color/cream_outline</item>
+        <item name="colorOutlineVariant">@color/cream_outline_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/cream_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/cream_container_low</item>
+        <item name="colorSurfaceContainer">@color/cream_container</item>
+        <item name="colorSurfaceContainerHigh">@color/cream_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/cream_container_highest</item>
+
+        <!-- status bar matches the cream background, with dark icons -->
+        <item name="android:statusBarColor">@color/cream_background</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="Theme.Assignment" parent="Base.Theme.Assignment" />

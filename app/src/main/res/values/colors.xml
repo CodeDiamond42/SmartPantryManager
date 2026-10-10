@@ -4,5 +4,48 @@
     <color name="white">#FFFFFFFF</color>
     <color name="status_have">#2E7D32</color>
     <color name="status_missing">#C62828</color>
-    <color name="status_warning">#E65100</color>
+    <color name="status_warning">#BF4A00</color>
+
+    <!-- Light mode -->
+    <color name="teal_primary">#00696B</color>
+    <color name="teal_on_primary">#FFFFFF</color>
+    <color name="teal_primary_container">#B9ECEA</color>
+    <color name="teal_on_primary_container">#002020</color>
+    <color name="teal_secondary">#4A6362</color>
+    <color name="teal_on_secondary">#FFFFFF</color>
+    <color name="teal_secondary_container">#CCE8E7</color>
+    <color name="teal_on_secondary_container">#051F1F</color>
+    <color name="cream_background">#FBF8F2</color>
+    <color name="cream_on_background">#1C1B18</color>
+    <color name="cream_surface_variant">#E4E3DA</color>
+    <color name="cream_on_surface_variant">#45483F</color>
+    <color name="cream_outline">#767870</color>
+    <color name="cream_outline_variant">#C7C7BE</color>
+    <color name="cream_container_lowest">#FFFFFF</color>
+    <color name="cream_container_low">#F6F2EC</color>
+    <color name="cream_container">#F0ECE6</color>
+    <color name="cream_container_high">#EAE7E0</color>
+    <color name="cream_container_highest">#E4E1DA</color>
+
+    <!-- Dark mode -->
+    <color name="teal_dark_primary">#80D5D3</color>
+    <color name="teal_dark_on_primary">#003736</color>
+    <color name="teal_dark_primary_container">#004F4F</color>
+    <color name="teal_dark_on_primary_container">#9CF1EF</color>
+    <color name="teal_dark_secondary">#B0CCCB</color>
+    <color name="teal_dark_on_secondary">#1B3534</color>
+    <color name="teal_dark_secondary_container">#324B4B</color>
+    <color name="teal_dark_on_secondary_container">#CCE8E7</color>
+    <color name="dark_background">#101414</color>
+    <color name="dark_on_background">#E0E3E2</color>
+    <color name="dark_surface_variant">#3F4948</color>
+    <color name="dark_on_surface_variant">#BEC9C8</color>
+    <color name="dark_outline">#889392</color>
+    <color name="dark_outline_variant">#3F4948</color>
+    <color name="dark_container_lowest">#0B0F0F</color>
+    <color name="dark_container_low">#181C1C</color>
+    <color name="dark_container">#1C2020</color>
+    <color name="dark_container_high">#272B2B</color>
+    <color name="dark_container_highest">#313535</color>
+
 </resources>

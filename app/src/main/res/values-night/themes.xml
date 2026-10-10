@@ -1,7 +1,30 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- "Kitchen teal" for dark mode: lighter teal so it stands out on a dark background. -->
     <style name="Base.Theme.Assignment" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">@color/teal_dark_primary</item>
+        <item name="colorOnPrimary">@color/teal_dark_on_primary</item>
+        <item name="colorPrimaryContainer">@color/teal_dark_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/teal_dark_on_primary_container</item>
+        <item name="colorSecondary">@color/teal_dark_secondary</item>
+        <item name="colorOnSecondary">@color/teal_dark_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/teal_dark_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/teal_dark_on_secondary_container</item>
+
+        <item name="android:colorBackground">@color/dark_background</item>
+        <item name="colorOnBackground">@color/dark_on_background</item>
+        <item name="colorSurface">@color/dark_background</item>
+        <item name="colorOnSurface">@color/dark_on_background</item>
+        <item name="colorSurfaceVariant">@color/dark_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/dark_on_surface_variant</item>
+        <item name="colorOutline">@color/dark_outline</item>
+        <item name="colorOutlineVariant">@color/dark_outline_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/dark_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/dark_container_low</item>
+        <item name="colorSurfaceContainer">@color/dark_container</item>
+        <item name="colorSurfaceContainerHigh">@color/dark_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/dark_container_highest</item>
+
+        <item name="android:statusBarColor">@color/dark_background</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>
