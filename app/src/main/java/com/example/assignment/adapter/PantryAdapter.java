@@ -23,7 +23,6 @@ import java.util.Locale;
 
 /**
  * Connects the list of PantryItems to the RecyclerView.
- * If expiry alerts are on, items that are expired or expiring soon get a coloured warning.
  */
 public class PantryAdapter extends RecyclerView.Adapter<PantryAdapter.PantryViewHolder> {
 

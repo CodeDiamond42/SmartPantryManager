@@ -6,8 +6,7 @@ import java.util.Map;
 
 /**
  * Converts units into grams, ml or pieces so amounts can be compared.
- * Mass and volume can't be mixed (you'd need to know how dense the food is),
- * so grams vs ml just won't match.
+ * Mass and volume can't be mixed, so grams vs ml just won't match.
  */
 public final class UnitConverter {
 

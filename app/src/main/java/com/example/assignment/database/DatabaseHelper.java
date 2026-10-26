@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Creates the SQLite database, provides CRUD methods for pantry items
+ * This file creates the SQLite database, provides CRUD methods for pantry items
  * and reads the recipes back out with their ingredients.
  * A single shared instance is used (getInstance) so the whole app works with
  * one database connection instead of opening a new one on every screen.

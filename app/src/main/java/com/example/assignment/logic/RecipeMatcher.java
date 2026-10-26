@@ -15,8 +15,6 @@ import java.util.Map;
  * The rule is strict: every ingredient has to be there, in at least the amount
  * the recipe needs. If even one is missing or there isn't enough of it,
  * the recipe doesn't get suggested.
- *
- * There's no Android code in here on purpose, so it can be unit tested.
  */
 public final class RecipeMatcher {
 

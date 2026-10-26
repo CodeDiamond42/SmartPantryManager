@@ -11,14 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Puts the built-in recipes into the database. Only called once, from
+ * This file puts the built-in recipes into the database. Only called once, from
  * DatabaseHelper.onCreate(), the first time the app runs.
- * Each recipe has a name, roughly how many minutes it takes, the steps,
- * and its ingredients.
+ * Each recipe has a name, roughly how many minutes it takes, the steps, and its ingredients.
  * Units have to be from the units list (g, kg, ml, L, pcs, tsp, tbsp, cup),
- * and each ingredient always uses the same kind of unit across all recipes
- * (butter is always grams, milk is always ml, eggs are always pcs etc.)
- * so the matching works properly.
+ * and each ingredient always uses the same kind of unit across all recipes so the matching works properly.
  */
 final class RecipeSeeder {
 

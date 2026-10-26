@@ -7,10 +7,8 @@ import com.example.assignment.R;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 /**
- * Sets up the bottom navigation bar the same way on every main screen,
+ * This file sets up the bottom navigation bar the same way on every main screen,
  * so the code isn't copied into each Activity.
- * The Pantry screen is always the "home" screen at the bottom of the back stack.
- * Other tabs open on top of it, so pressing Back from any tab goes to the Pantry.
  */
 public final class BottomNavHelper {
 
