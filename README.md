@@ -95,10 +95,8 @@ User settings are stored separately using `SharedPreferences`, since they are si
 ### 1. Clone the Repository
 
 ```
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/CodeDiamond42/SmartPantryManager.git
 ```
-
-Replace `YOUR_GITHUB_REPOSITORY_URL` with this repository's URL.
 
 ### 2. Open the Project
 1. Open Android Studio
